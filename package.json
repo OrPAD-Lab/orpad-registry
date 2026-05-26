@@ -1,0 +1,12 @@
+{
+  "name": "orpad-node-pack-registry",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Official OrPAD node pack registry metadata.",
+  "scripts": {
+    "validate": "node scripts/validate-registry.mjs registry/node-packs.json",
+    "validate:json": "node scripts/validate-registry.mjs registry/node-packs.json --json"
+  },
+  "license": "MIT"
+}
+
