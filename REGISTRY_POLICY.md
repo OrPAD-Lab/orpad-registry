@@ -20,7 +20,7 @@ Every registry entry must include:
 - HTTPS `manifestUrl` pointing to the exact source reference.
 - Safe relative `manifestPath` and optional `sourceRoot`.
 - `checksums.manifestSha256` for the manifest.
-- SHA-256 checksums for declared files when the pack includes external declared assets.
+- SHA-256 checksums for declared files when the package includes external declared assets.
 - Declared `capabilities`, `nodeTypes`, `author`, `license`, `keywords`, and useful links when available.
 - Maintainer review metadata before merge:
   - `review.status: "approved"`
@@ -59,4 +59,3 @@ Package updates follow the same pull request and review flow as new packages. Ma
 ## Security Reports
 
 Report sensitive package or registry issues privately to OrPAD maintainers before opening a public issue. If a package is actively harmful, maintainers should remove the entry first and publish details after users have a safe update path.
-

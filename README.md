@@ -2,17 +2,26 @@
 
 This repository is the official package registry consumed by OrPAD Package Manager.
 
-Default registry index:
+Canonical registry index:
+
+```text
+https://raw.githubusercontent.com/OrPAD-Lab/orpad-registry/main/registry/packages.json
+```
+
+Compatibility registry index:
 
 ```text
 https://raw.githubusercontent.com/OrPAD-Lab/orpad-registry/main/registry/node-packs.json
 ```
 
+The legacy `registry/node-packs.json` path remains published as a compatibility
+alias for OrPAD builds that already shipped with that URL.
+
 ## How Sharing Works
 
-OrPAD does not let arbitrary uploads become official packages. Contributors submit package metadata through pull requests. Maintainers review the source repository, manifest, declared capabilities, checksums, and review metadata before merge. Only merged entries in `registry/node-packs.json` are treated as the official OrPAD registry by Package Manager.
+OrPAD does not let arbitrary uploads become official packages. Contributors submit package metadata through pull requests. Maintainers review the source repository, manifest, declared capabilities, checksums, and review metadata before merge. Only merged entries in `registry/packages.json` are treated as the official OrPAD registry by Package Manager.
 
-The current registry file and CLI still use the legacy `node-packs` name because OrPAD package manifests can contribute node types. A package can also include reusable graphs, skills, rules, templates, and supporting assets, so the public name is **Package Registry**.
+The current registry contract still uses the legacy `nodePackRegistry` schema id because OrPAD package manifests can contribute node types. A package can also include reusable graphs, skills, rules, templates, and supporting assets, so the public name is **Package Registry**.
 
 Custom registry URLs still work in OrPAD, but the app labels them as custom discovery sources unless a user or workspace explicitly trusts them.
 
@@ -23,14 +32,14 @@ Custom registry URLs still work in OrPAD, but the app labels them as custom disc
 3. Generate a registry entry draft from the OrPAD app repository:
 
 ```powershell
-node bin/orpad-cli.mjs node-packs registry-entry create <node-pack-folder> `
+node bin/orpad-cli.mjs packages registry-entry create <package-folder> `
   --source-repository https://github.com/<owner>/<repo> `
   --source-ref <tag-or-commit> `
   --manifest-url https://raw.githubusercontent.com/<owner>/<repo>/<tag-or-commit>/orpad.node-pack.json `
   --json
 ```
 
-4. Add or update the entry in `registry/node-packs.json`.
+4. Add or update the entry in `registry/packages.json` and keep `registry/node-packs.json` as the compatibility alias.
 5. Open a pull request using the package submission template.
 6. Run validation before pushing:
 
@@ -42,7 +51,9 @@ Maintainers add the final `review.status: "approved"` metadata after review. A p
 
 ## Files
 
-- `registry/node-packs.json`: the public registry index.
-- `schemas/node-pack-registry.schema.json`: schema for registry metadata shape.
+- `registry/packages.json`: the public registry index.
+- `registry/node-packs.json`: compatibility alias for shipped OrPAD builds.
+- `schemas/package-registry.schema.json`: schema for registry metadata shape.
+- `schemas/node-pack-registry.schema.json`: compatibility schema alias.
 - `scripts/validate-registry.mjs`: no-dependency policy validator used by CI.
 - `REGISTRY_POLICY.md`: review and acceptance policy.

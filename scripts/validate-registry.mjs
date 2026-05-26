@@ -17,7 +17,7 @@ function usage() {
     'Usage:',
     '  node scripts/validate-registry.mjs [registry-json] [--json] [--allow-unapproved]',
     '',
-    'Defaults to registry/node-packs.json and enforces the official OrPAD-Lab registry policy.',
+    'Defaults to registry/packages.json and enforces the official OrPAD-Lab registry policy.',
   ].join('\n');
 }
 
@@ -51,6 +51,20 @@ function error(code, message, details = {}) {
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function stableJsonValue(value) {
+  if (Array.isArray(value)) return value.map(stableJsonValue);
+  if (isPlainObject(value)) {
+    const next = {};
+    for (const key of Object.keys(value).sort()) next[key] = stableJsonValue(value[key]);
+    return next;
+  }
+  return value;
+}
+
+function stableJson(value) {
+  return JSON.stringify(stableJsonValue(value));
 }
 
 function valueKind(value) {
@@ -347,7 +361,7 @@ function validateRegistry(registry, options = {}) {
     const entry = validateEntry(rawEntry, index, diagnostics, options);
     if (!entry?.id) continue;
     if (entrySeen.has(entry.id)) {
-      diagnostics.push(error('NODE_PACK_REGISTRY_ENTRY_DUPLICATE_ID', 'Registry declares the same node pack id more than once.', {
+      diagnostics.push(error('NODE_PACK_REGISTRY_ENTRY_DUPLICATE_ID', 'Registry declares the same package id more than once.', {
         path: `entries[${index}].id`,
         entryId: entry.id,
       }));
@@ -376,6 +390,29 @@ async function readRegistry(filePath) {
   };
 }
 
+async function aliasDiagnostics(registryPath, registry) {
+  const diagnostics = [];
+  const normalizedPath = path.resolve(registryPath).replace(/\\/g, '/');
+  if (!normalizedPath.endsWith('/registry/packages.json')) return diagnostics;
+  const aliasPath = path.resolve(path.dirname(registryPath), 'node-packs.json');
+  let alias;
+  try {
+    alias = JSON.parse(await fs.readFile(aliasPath, 'utf-8'));
+  } catch (err) {
+    diagnostics.push(error('ORPAD_REGISTRY_COMPAT_ALIAS_MISSING', 'registry/node-packs.json compatibility alias must exist for shipped OrPAD builds.', {
+      path: aliasPath,
+      error: err.message,
+    }));
+    return diagnostics;
+  }
+  if (stableJson(alias) !== stableJson(registry)) {
+    diagnostics.push(error('ORPAD_REGISTRY_COMPAT_ALIAS_DRIFT', 'registry/node-packs.json must match registry/packages.json until legacy OrPAD builds are retired.', {
+      path: aliasPath,
+    }));
+  }
+  return diagnostics;
+}
+
 function printResult(result, json) {
   if (json) {
     process.stdout.write(`${JSON.stringify(result)}\n`);
@@ -395,12 +432,18 @@ async function main() {
     process.stdout.write(`${usage()}\n`);
     return;
   }
-  const registryPath = args._[0] || 'registry/node-packs.json';
+  const registryPath = args._[0] || 'registry/packages.json';
   const { path: resolvedPath, registry } = await readRegistry(registryPath);
   const validation = validateRegistry(registry, { allowUnapproved: args.allowUnapproved });
+  const aliasIssues = await aliasDiagnostics(resolvedPath, registry);
+  const diagnostics = [
+    ...validation.diagnostics,
+    ...aliasIssues,
+  ];
+  const success = validation.ok && !aliasIssues.some(item => item.level === 'error');
   const result = {
-    success: validation.ok,
-    ok: validation.ok,
+    success,
+    ok: success,
     path: resolvedPath,
     registry: {
       registryId: registry?.registryId || '',
@@ -411,17 +454,17 @@ async function main() {
         latestVersion: entry?.latestVersion || '',
       })) : [],
     },
-    diagnostics: validation.diagnostics,
+    diagnostics,
   };
   printResult(result, args.json);
-  if (!validation.ok) process.exitCode = 1;
+  if (!success) process.exitCode = 1;
 }
 
 main().catch((err) => {
   const result = {
     success: false,
     ok: false,
-    path: path.resolve(process.argv[2] || 'registry/node-packs.json'),
+    path: path.resolve(process.argv[2] || 'registry/packages.json'),
     registry: null,
     diagnostics: [error('ORPAD_REGISTRY_VALIDATE_FAILED', 'Registry validation could not complete.', {
       error: err.message,
