@@ -1,4 +1,4 @@
-# OrPAD Node Pack Registry
+# OrPAD Package Registry
 
 This repository is the official package registry consumed by OrPAD Package Manager.
 
@@ -10,13 +10,15 @@ https://raw.githubusercontent.com/OrPAD-Lab/orpad-registry/main/registry/node-pa
 
 ## How Sharing Works
 
-OrPAD does not let arbitrary uploads become official packages. Contributors submit node pack metadata through pull requests. Maintainers review the source repository, manifest, declared capabilities, checksums, and review metadata before merge. Only merged entries in `registry/node-packs.json` are treated as the official OrPAD registry by Package Manager.
+OrPAD does not let arbitrary uploads become official packages. Contributors submit package metadata through pull requests. Maintainers review the source repository, manifest, declared capabilities, checksums, and review metadata before merge. Only merged entries in `registry/node-packs.json` are treated as the official OrPAD registry by Package Manager.
+
+The current registry file and CLI still use the legacy `node-packs` name because OrPAD package manifests can contribute node types. A package can also include reusable graphs, skills, rules, templates, and supporting assets, so the public name is **Package Registry**.
 
 Custom registry URLs still work in OrPAD, but the app labels them as custom discovery sources unless a user or workspace explicitly trusts them.
 
 ## Submit A Package
 
-1. Publish the node pack source in a public HTTPS Git repository.
+1. Publish the package source in a public HTTPS Git repository.
 2. Pin the package to an immutable tag or commit in the registry entry.
 3. Generate a registry entry draft from the OrPAD app repository:
 
@@ -44,4 +46,3 @@ Maintainers add the final `review.status: "approved"` metadata after review. A p
 - `schemas/node-pack-registry.schema.json`: schema for registry metadata shape.
 - `scripts/validate-registry.mjs`: no-dependency policy validator used by CI.
 - `REGISTRY_POLICY.md`: review and acceptance policy.
-
